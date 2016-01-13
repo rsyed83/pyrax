@@ -82,7 +82,7 @@ class Service(object):
         eps = catalog.get("endpoints", [])
         for ep in eps:
             rgn = ep.get("region", "ALL")
-            self.endpoints[rgn] = Endpoint(ep, self.service_type, rgn, identity,
+            self.endpoints[rgn] = Endpoint(ep, fulltype, rgn, identity,
                                            verify_ssl=self.identity.verify_ssl)
         return
 
@@ -297,21 +297,21 @@ class BaseIdentity(object):
                 "nova": "compute",
                 "cloudfiles": "object_store",
                 "swift": "object_store",
-                "cloud_loadbalancers": "load_balancer",
-                "cloud_databases": "database",
-                "trove": "database",
+                "cloud_loadbalancers": "rax:load_balancer",
+                "cloud_databases": "rax:database",
+                "trove": "rax:database",
                 "cloud_blockstorage": "volume",
                 "cinder": "volume",
-                "cloud_dns": "dns",
-                "designate": "dns",
-                "cloud_networks": "raxnetwork",
+                "cloud_dns": "rax:dns",
+                "designate": "rax:dns",
+                "cloud_networks": "compute",
                 "neutron": "network",
-                "cloud_monitoring": "monitor",
-                "autoscale": "autoscale",
+                "cloud_monitoring": "rax:monitor",
+                "autoscale": "rax:autoscale",
                 "images": "image",
                 "glance": "image",
-                "queues": "queues",
-                "marconi": "queues",
+                "queues": "rax:queues",
+                "marconi": "rax:queues",
                 }
 
 
@@ -648,7 +648,9 @@ class BaseIdentity(object):
             if not hasattr(service, "endpoints"):
                 # Not an OpenStack service
                 continue
-            setattr(self.services, service.service_type, service)
+            service_name = ':'.join([service.prefix, service.service_type]) \
+                if service.prefix else service.service_type
+            setattr(self.services, service_name, service)
             self.regions.update(list(service.endpoints.keys()))
         # Update the 'ALL' services to include all available regions.
         self.regions.discard("ALL")
